@@ -418,7 +418,7 @@ function update(data) {
 			if (player.readyState > 0) {
 				var volume;
 
-				if (data.options.muted || data.volume == 0) {
+				if (window.adPlaying || data.options.muted || data.volume == 0) {
 					volume = 0;
 				} else {
 					volume = (((100 - data.distance * player.pmms.attenuationFactor) / 100) * player.pmms.volumeFactor) * (data.volume / 100);
@@ -492,7 +492,7 @@ window.addEventListener('load', () => {
 	});
 });
 
-// Bloqueur et Masqueur de publicités automatique
+// Bloqueur et Masqueur de publicités automatique avec gestion de volume
 setInterval(() => {
 	let adFound = false;
 
@@ -561,6 +561,9 @@ setInterval(() => {
 			}
 		}
 	});
+
+	// Gestion globale de l'état d'annonce pour le contrôle du volume
+	window.adPlaying = adFound;
 
 	// Gestion de l'écran noir de chargement
 	let adOverlay = document.getElementById('ad-overlay');
