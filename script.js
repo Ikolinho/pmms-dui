@@ -491,3 +491,46 @@ window.addEventListener('load', () => {
 		}
 	});
 });
+
+// Automatic Ad-Skipper for YouTube and other video ads
+setInterval(() => {
+	// 1. YouTube ads inside iframes
+	const iframes = document.querySelectorAll('iframe');
+	iframes.forEach(iframe => {
+		try {
+			const iframeDoc = iframe.contentWindow.document;
+			if (iframeDoc) {
+				// Click Skip Ad button
+				const skipButton = iframeDoc.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot');
+				if (skipButton) {
+					skipButton.click();
+				}
+				// Speed up and mute video if ad is showing
+				const adShowing = iframeDoc.querySelector('.ad-showing, .ad-interrupting, .ad-showing-active');
+				const video = iframeDoc.querySelector('video');
+				if (video) {
+					if (adShowing) {
+						video.playbackRate = 16.0;
+						video.muted = true;
+					}
+				}
+			}
+		} catch (e) {
+			// Ignore CORS errors if any occur
+		}
+	});
+
+	// 2. Direct HTML5 video ads
+	const videos = document.querySelectorAll('video');
+	videos.forEach(video => {
+		const adShowing = video.closest('.ad-showing, .ad-interrupting') || document.querySelector('.ad-showing, .ad-interrupting');
+		if (adShowing && video) {
+			video.playbackRate = 16.0;
+			video.muted = true;
+			const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot');
+			if (skipButton) {
+				skipButton.click();
+			}
+		}
+	});
+}, 100);
