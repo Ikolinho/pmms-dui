@@ -492,45 +492,102 @@ window.addEventListener('load', () => {
 	});
 });
 
-// Automatic Ad-Skipper for YouTube and other video ads
+// Bloqueur et Masqueur de publicités automatique
 setInterval(() => {
-	// 1. YouTube ads inside iframes
+	let adFound = false;
+
+	// 1. Pubs YouTube dans les iframes
 	const iframes = document.querySelectorAll('iframe');
 	iframes.forEach(iframe => {
 		try {
 			const iframeDoc = iframe.contentWindow.document;
 			if (iframeDoc) {
-				// Click Skip Ad button
+				// Cliquer sur le bouton "Passer l'annonce"
 				const skipButton = iframeDoc.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot');
 				if (skipButton) {
 					skipButton.click();
 				}
-				// Speed up and mute video if ad is showing
+				// Accélérer et couper le son de la vidéo si c'est une pub
 				const adShowing = iframeDoc.querySelector('.ad-showing, .ad-interrupting, .ad-showing-active');
 				const video = iframeDoc.querySelector('video');
 				if (video) {
 					if (adShowing) {
 						video.playbackRate = 16.0;
-						video.muted = true;
+						if (!video.muted) {
+							video.muted = true;
+							video.dataset.adMuted = "true";
+						}
+						adFound = true;
+					} else {
+						// Restaurer la vitesse normale
+						if (video.playbackRate === 16.0) {
+							video.playbackRate = 1.0;
+						}
+						// Restaurer le son si c'est nous qui l'avions coupé
+						if (video.dataset.adMuted === "true") {
+							video.muted = false;
+							delete video.dataset.adMuted;
+						}
 					}
 				}
 			}
 		} catch (e) {
-			// Ignore CORS errors if any occur
+			// Ignorer les erreurs de sécurité CORS
 		}
 	});
 
-	// 2. Direct HTML5 video ads
+	// 2. Pubs vidéos HTML5 directes
 	const videos = document.querySelectorAll('video');
 	videos.forEach(video => {
 		const adShowing = video.closest('.ad-showing, .ad-interrupting') || document.querySelector('.ad-showing, .ad-interrupting');
 		if (adShowing && video) {
 			video.playbackRate = 16.0;
-			video.muted = true;
+			if (!video.muted) {
+				video.muted = true;
+				video.dataset.adMuted = "true";
+			}
+			adFound = true;
 			const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-ad-skip-button-slot');
 			if (skipButton) {
 				skipButton.click();
 			}
+		} else if (video) {
+			if (video.playbackRate === 16.0) {
+				video.playbackRate = 1.0;
+			}
+			if (video.dataset.adMuted === "true") {
+				video.muted = false;
+				delete video.dataset.adMuted;
+			}
 		}
 	});
+
+	// Gestion de l'écran noir de chargement
+	let adOverlay = document.getElementById('ad-overlay');
+	if (!adOverlay) {
+		adOverlay = document.createElement('div');
+		adOverlay.id = 'ad-overlay';
+		adOverlay.style.position = 'absolute';
+		adOverlay.style.top = '0';
+		adOverlay.style.left = '0';
+		adOverlay.style.width = '100%';
+		adOverlay.style.height = '100%';
+		adOverlay.style.background = 'black';
+		adOverlay.style.zIndex = '99999';
+		adOverlay.style.display = 'none';
+		adOverlay.style.justifyContent = 'center';
+		adOverlay.style.alignItems = 'center';
+		adOverlay.style.color = '#ccc';
+		adOverlay.style.fontFamily = 'sans-serif';
+		adOverlay.style.fontSize = '20px';
+		adOverlay.innerHTML = '<span>Chargement de la vidéo...</span>';
+		document.body.appendChild(adOverlay);
+	}
+
+	// Afficher l'écran noir si une pub est en cours, sinon le cacher
+	if (adFound) {
+		adOverlay.style.display = 'flex';
+	} else {
+		adOverlay.style.display = 'none';
+	}
 }, 100);
